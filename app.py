@@ -59,6 +59,10 @@ from utils.audio_info import get_audio_info
 from utils.visualizer import plot_waveform, plot_spectrogram, plot_pitch_track, plot_chromagram, plot_speaker_diarization
 from diar import SpeakerDiarizer, format_as_conversation
 
+# Import audio denoising functions - Trisha's Lab specials! 🧪⚡
+import noisereduce as nr
+from scipy.signal import butter, lfilter
+
 # Load environment variables
 load_dotenv()
 
@@ -79,6 +83,97 @@ def get_global_pipeline():
         _GLOBAL_PIPELINE = AudioProcessingPipeline()
         
     return _GLOBAL_PIPELINE
+
+# === Trisha's Audio Lab Functions ===
+# 🧪 These are the secret sauce for audio enhancement! 
+
+def normalize_audio(y):
+    """Normalize audio to -1..1 range - Trisha's favorite normalization trick!"""
+    max_val = np.max(np.abs(y))
+    return y / max_val if max_val > 0 else y
+
+def highpass_filter(y, sr, cutoff):
+    """High-pass filter to remove low-frequency noise - cuts through the mud!"""
+    b, a = butter(N=4, Wn=cutoff/(sr/2), btype='high', analog=False)
+    filtered = lfilter(b, a, y)
+    return filtered
+
+def denoise_audio_advanced(audio_path, method="standard", highpass_cutoff=None, reduce_loud_segments=False):
+    """
+    🎧 Trisha's Advanced Audio Denoising Laboratory! 
+    
+    Options:
+    - method: "standard", "aggressive", or "gentle" 
+    - highpass_cutoff: None or frequency in Hz (100, 150, 200 recommended)
+    - reduce_loud_segments: True to apply dynamic volume reduction to loud parts
+    
+    Returns: (processed_audio, sample_rate, processing_info)
+    """
+    print(f"🧪 Trisha's Lab: Processing {audio_path} with method='{method}'")
+    
+    try:
+        # Load the audio file
+        y, sr = librosa.load(audio_path, sr=None, mono=True)
+        processing_steps = []
+        
+        # Step 1: Normalize the original audio
+        y_processed = normalize_audio(y)
+        processing_steps.append("✅ Audio normalized")
+        
+        # Step 2: Apply high-pass filter if requested
+        if highpass_cutoff:
+            y_processed = normalize_audio(highpass_filter(y_processed, sr, highpass_cutoff))
+            processing_steps.append(f"✅ High-pass filter applied ({highpass_cutoff}Hz)")
+        
+        # Step 3: Apply noise reduction based on method
+        if method == "gentle":
+            # Gentle denoising - less aggressive
+            y_processed = normalize_audio(nr.reduce_noise(y=y_processed, sr=sr, stationary=False, prop_decrease=0.6))
+            processing_steps.append("✅ Gentle noise reduction applied")
+        elif method == "aggressive":
+            # Aggressive denoising - more thorough
+            y_processed = normalize_audio(nr.reduce_noise(y=y_processed, sr=sr, stationary=False, prop_decrease=0.9))
+            processing_steps.append("✅ Aggressive noise reduction applied")
+        else:  # standard
+            # Standard denoising using first second as noise sample
+            noise_sample = y_processed[:sr] if len(y_processed) > sr else y_processed
+            y_processed = normalize_audio(nr.reduce_noise(y=y_processed, sr=sr, y_noise=noise_sample))
+            processing_steps.append("✅ Standard noise reduction applied")
+        
+        # Step 4: Apply dynamic volume reduction to loud segments if requested
+        if reduce_loud_segments:
+            frame_length = 2048
+            hop_length = 512
+            rms = librosa.feature.rms(y=y_processed, frame_length=frame_length, hop_length=hop_length)[0]
+            threshold = np.percentile(rms, 90)  # Find the loudest 10% of frames
+            loud_frames = rms > threshold
+            
+            # Create a mask to reduce volume of loud segments
+            mask = np.ones_like(y_processed)
+            for i, is_loud in enumerate(loud_frames):
+                if is_loud:
+                    start = i * hop_length
+                    end = min(start + frame_length, len(y_processed))
+                    mask[start:end] *= 0.2  # Reduce volume by 80% - "Shhh!" says Trisha
+            
+            y_processed = normalize_audio(y_processed * mask)
+            processing_steps.append("✅ Dynamic volume reduction applied to loud segments")
+        
+        processing_info = {
+            "original_duration": len(y) / sr,
+            "sample_rate": sr,
+            "processing_steps": processing_steps,
+            "method": method,
+            "highpass_cutoff": highpass_cutoff,
+            "reduce_loud_segments": reduce_loud_segments
+        }
+        
+        print(f"🎉 Trisha's Lab: Processing complete! Steps: {len(processing_steps)}")
+        return y_processed, sr, processing_info
+        
+    except Exception as e:
+        print(f"💥 Trisha's Lab Error: {str(e)}")
+        raise e
 
 # Combined transcription and diarization
 def process_audio_with_diarization(audio_path, task, segmentation_model, embedding_model,
@@ -415,8 +510,81 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
                     elem_classes="status-bar"
                 )
         
-        # Audio Analysis Tab
-        
+        # === Trisha's Audio Lab Tab === 🧪
+        with gr.TabItem("🧪 Trisha's Audio Lab"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    gr.Markdown("""
+                    # 🧪⚡ Trisha's Audio Enhancement Laboratory
+                    
+                    **Welcome to the lab, Hue!** Here's where the magic happens! 
+                    
+                    Upload your audio and let's clean it up with some serious science:
+                    - **Noise Reduction**: Get rid of that pesky background noise
+                    - **High-pass Filtering**: Cut out low-frequency rumble 
+                    - **Dynamic Volume Control**: Tame those loud segments
+                    
+                    *Perfect for improving transcription quality! 🎯*
+                    """)
+                    
+                    lab_audio_input = gr.Audio(
+                        label="🎵 Upload Audio for Enhancement",
+                        type="filepath",
+                        interactive=True
+                    )
+                    
+                    with gr.Row():
+                        denoise_method = gr.Radio(
+                            choices=["gentle", "standard", "aggressive"],
+                            value="standard",
+                            label="🎛️ Denoising Method",
+                            info="Gentle = subtle, Standard = balanced, Aggressive = maximum cleanup"
+                        )
+                    
+                    with gr.Row():
+                        highpass_cutoff = gr.Dropdown(
+                            choices=[None, 100, 150, 200],
+                            value=None,
+                            label="🔊 High-pass Filter (Hz)",
+                            info="Remove frequencies below this threshold (good for speech: 100-150Hz)"
+                        )
+                        
+                        reduce_loud = gr.Checkbox(
+                            value=False,
+                            label="🔇 Reduce Loud Segments",
+                            info="Automatically lower volume of loud parts"
+                        )
+                    
+                    btn_enhance = gr.Button("✨ Enhance Audio", variant="primary", size="lg")
+                    
+                    lab_status = gr.Markdown(
+                        value="*Upload audio and click 'Enhance Audio' to start the magic! ⚡*", 
+                        elem_classes="status-bar"
+                    )
+                
+                with gr.Column(scale=2):
+                    with gr.Tabs():
+                        with gr.TabItem("🎧 Enhanced Audio"):
+                            enhanced_audio_output = gr.Audio(
+                                label="🎉 Your Enhanced Audio",
+                                type="filepath",
+                                interactive=False
+                            )
+                            
+                            processing_info = gr.Markdown(
+                                label="📊 Processing Report",
+                                value="*Processing info will appear here*"
+                            )
+                        
+                        with gr.TabItem("🔍 Before/After Comparison"):
+                            with gr.Row():
+                                original_waveform = gr.Plot(label="📊 Original Waveform")
+                                enhanced_waveform = gr.Plot(label="✨ Enhanced Waveform")
+                            
+                            comparison_info = gr.Markdown(
+                                value="*Upload and process audio to see before/after comparison*"
+                            )
+
         # Audio Analysis Tab
         with gr.TabItem("📊 Audio Analysis"):
             with gr.Row():
@@ -757,6 +925,112 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
         ]
     )
     
+    # === Trisha's Audio Lab Processing Function === 🧪
+    def enhance_audio_lab(audio_path, method, highpass_cutoff, reduce_loud_segments):
+        """
+        🧪 Main function for Trisha's Audio Lab processing
+        """
+        if not audio_path:
+            return (
+                None,  # enhanced_audio_output
+                "*Please upload an audio file first, Hue! 📁*",  # processing_info
+                None,  # original_waveform
+                None,  # enhanced_waveform
+                "*Upload an audio file to start the enhancement! ⚡*",  # comparison_info
+                "*Upload audio to begin! 🎵*"  # lab_status
+            )
+        
+        try:
+            gr.Info("🧪 Trisha's Lab is firing up! Analyzing your audio...")
+            
+            # Load original audio for comparison
+            original_audio, original_sr = librosa.load(audio_path, sr=None, mono=True)
+            
+            # Process the audio using Trisha's advanced denoising
+            enhanced_audio, enhanced_sr, processing_details = denoise_audio_advanced(
+                audio_path, 
+                method=method, 
+                highpass_cutoff=highpass_cutoff, 
+                reduce_loud_segments=reduce_loud_segments
+            )
+            
+            # Create temporary file for the enhanced audio
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                enhanced_path = tmp_file.name
+                sf.write(enhanced_path, enhanced_audio, enhanced_sr)
+            
+            gr.Info("✨ Audio enhancement complete! Generating visualizations...")
+            
+            # Create processing report
+            processing_report = f"""
+            ## 🎉 Enhancement Complete!
+            
+            **Original Audio:**
+            - Duration: {processing_details['original_duration']:.2f} seconds
+            - Sample Rate: {processing_details['sample_rate']} Hz
+            
+            **Processing Applied:**
+            """
+            
+            for step in processing_details['processing_steps']:
+                processing_report += f"\n{step}"
+            
+            processing_report += f"""
+            
+            **Settings Used:**
+            - Method: {processing_details['method'].title()}
+            - High-pass Filter: {processing_details['highpass_cutoff'] or 'None'} Hz
+            - Loud Segment Reduction: {'Yes' if processing_details['reduce_loud_segments'] else 'No'}
+            
+            *Ready for transcription! 🎯*
+            """
+            
+            # Generate before/after waveform comparison
+            original_plot = plot_waveform(original_audio, original_sr, title="📊 Original Audio")
+            enhanced_plot = plot_waveform(enhanced_audio, enhanced_sr, title="✨ Enhanced Audio")
+            
+            # Create comparison info
+            original_rms = np.sqrt(np.mean(original_audio**2))
+            enhanced_rms = np.sqrt(np.mean(enhanced_audio**2))
+            noise_reduction = ((original_rms - enhanced_rms) / original_rms) * 100 if original_rms > 0 else 0
+            
+            comparison_text = f"""
+            ## 🔍 Before vs After Analysis
+            
+            **Original RMS Energy:** {original_rms:.4f}
+            **Enhanced RMS Energy:** {enhanced_rms:.4f}
+            **Estimated Noise Reduction:** {noise_reduction:.1f}%
+            
+            *Lower RMS typically indicates successful noise reduction! 📉*
+            """
+            
+            success_message = f"*🎉 Enhancement complete! Applied {len(processing_details['processing_steps'])} processing steps.*"
+            
+            gr.Info("🎉 All done! Your enhanced audio is ready!")
+            
+            return (
+                enhanced_path,  # enhanced_audio_output
+                processing_report,  # processing_info  
+                original_plot,  # original_waveform
+                enhanced_plot,  # enhanced_waveform
+                comparison_text,  # comparison_info
+                success_message  # lab_status
+            )
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            error_msg = f"💥 Lab explosion! Error: {str(e)}"
+            return (
+                None,  # enhanced_audio_output
+                f"**Error:** {error_msg}",  # processing_info
+                None,  # original_waveform
+                None,  # enhanced_waveform  
+                f"*{error_msg}*",  # comparison_info
+                f"*{error_msg}*"  # lab_status
+            )
+
     # Audio analysis functions
     def analyze_audio(audio_path):
         if not audio_path:
@@ -844,6 +1118,26 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
             import traceback
             traceback.print_exc()
             return None, None, None, None, f"*Error during analysis: {str(e)}*", None
+    # Connect Trisha's Audio Lab enhance button 🧪
+    btn_enhance.click(
+        fn=enhance_audio_lab,
+        inputs=[
+            lab_audio_input,
+            denoise_method,
+            highpass_cutoff,
+            reduce_loud
+        ],
+        outputs=[
+            enhanced_audio_output,
+            processing_info,
+            original_waveform,
+            enhanced_waveform,
+            comparison_info,
+            lab_status
+        ],
+        show_progress=True
+    )
+    
     # Connect the analyze button
     btn_analyze.click(
         fn=lambda a: analyze_audio(a),

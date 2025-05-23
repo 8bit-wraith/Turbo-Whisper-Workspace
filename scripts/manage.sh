@@ -16,7 +16,8 @@ show_banner() {
     echo "║  ${CYAN}▀█▀ █ █ █▀█ █▄▄ █▀█   █▀█ █ █ █▀▄ █ █▀█${GREEN}  ║"
     echo "║  ${CYAN} █  █▄█ █▀▄ █▄█ █▄█   █▀█ █▄█ █▄▀ █ █▄█${GREEN}  ║"
     echo "║                                              ║"
-    echo "║  ${MAGENTA}W O R K S P A C E   M A N A G E R  v1.0${GREEN}    ║"
+    echo "║  ${MAGENTA}W O R K S P A C E   M A N A G E R  v2.0${GREEN}    ║"
+    echo "║  ${YELLOW}🧪 Now featuring Trisha's Audio Lab! 🧪${GREEN}    ║"
     echo "╚══════════════════════════════════════════════════╝"
     echo -e "${RESET}"
 }
@@ -87,6 +88,155 @@ start_app() {
     
     cd "$PROJECT_ROOT"
     python app.py
+}
+
+# Start the application with Trisha's Lab demo
+start_lab() {
+    echo -e "${MAGENTA}${BOLD}[*] 🧪⚡ Starting Trisha's Audio Lab Demo! ⚡🧪${RESET}"
+    echo -e "${YELLOW}${BOLD}[*] This will launch CyberVox with enhanced audio processing features!${RESET}"
+    echo -e "${CYAN}${BOLD}[*] Look for the '🧪 Trisha's Audio Lab' tab in the interface!${RESET}"
+    
+    # Check if .env file exists, create if not
+    if [ ! -f "${PROJECT_ROOT}/.env" ]; then
+        echo -e "${YELLOW}${BOLD}[!] .env file not found. Creating...${RESET}"
+        echo "# CyberVox Audio Workspace Environment Variables" > "${PROJECT_ROOT}/.env"
+        echo "HF_TOKEN=" >> "${PROJECT_ROOT}/.env"
+        echo -e "${GREEN}${BOLD}[✓] .env file created${RESET}"
+    fi
+    
+    cd "$PROJECT_ROOT"
+    
+    # Check if the demo script exists
+    if [ -f "${PROJECT_ROOT}/demo_trishas_lab.py" ]; then
+        echo -e "${GREEN}${BOLD}[✓] Found Trisha's Lab demo script${RESET}"
+        python demo_trishas_lab.py
+    else
+        echo -e "${YELLOW}${BOLD}[!] Demo script not found, starting regular app...${RESET}"
+        python app.py
+    fi
+}
+
+# Test audio enhancement functionality
+test_lab() {
+    echo -e "${MAGENTA}${BOLD}[*] 🧪 Testing Trisha's Audio Lab functionality...${RESET}"
+    
+    cd "$PROJECT_ROOT"
+    
+    # Create a simple test script for audio enhancement
+    if [ ! -f "${PROJECT_ROOT}/test_audio_lab.py" ]; then
+        echo -e "${YELLOW}${BOLD}[!] Creating audio lab test script...${RESET}"
+        cat > "${PROJECT_ROOT}/test_audio_lab.py" << 'EOL'
+#!/usr/bin/env python3
+"""
+🧪 Trisha's Audio Lab Test Script
+Tests the audio enhancement functionality
+"""
+
+import os
+import sys
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('lab_test')
+
+def test_imports():
+    """Test that all required modules can be imported"""
+    logger.info("🧪 Testing imports for Trisha's Audio Lab...")
+    
+    try:
+        import librosa
+        logger.info("✅ librosa imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import librosa: {e}")
+        return False
+    
+    try:
+        import noisereduce as nr
+        logger.info("✅ noisereduce imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import noisereduce: {e}")
+        return False
+    
+    try:
+        import soundfile as sf
+        logger.info("✅ soundfile imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import soundfile: {e}")
+        return False
+    
+    try:
+        from scipy.signal import butter, lfilter
+        logger.info("✅ scipy.signal imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import scipy.signal: {e}")
+        return False
+    
+    try:
+        import gradio as gr
+        logger.info("✅ gradio imported successfully")
+    except ImportError as e:
+        logger.error(f"❌ Failed to import gradio: {e}")
+        return False
+    
+    return True
+
+def test_audio_functions():
+    """Test that audio enhancement functions work"""
+    logger.info("🎧 Testing audio enhancement functions...")
+    
+    try:
+        # Import the enhanced app functions
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from app import normalize_audio, highpass_filter
+        
+        import numpy as np
+        
+        # Test normalize_audio function
+        test_audio = np.array([0.1, 0.5, -0.3, 0.8, -0.9])
+        normalized = normalize_audio(test_audio)
+        logger.info(f"✅ normalize_audio test passed: max={np.max(np.abs(normalized)):.3f}")
+        
+        # Test highpass_filter function  
+        test_audio_long = np.random.randn(1000)
+        filtered = highpass_filter(test_audio_long, 44100, 100)
+        logger.info(f"✅ highpass_filter test passed: length={len(filtered)}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Audio function test failed: {e}")
+        return False
+
+def main():
+    logger.info("=== Starting Trisha's Audio Lab Test ===")
+    
+    # Test 1: Import test
+    if not test_imports():
+        logger.error("❌ Import tests failed!")
+        return False
+    
+    # Test 2: Function test
+    if not test_audio_functions():
+        logger.error("❌ Function tests failed!")
+        return False
+    
+    logger.info("🎉 All tests passed! Trisha's Audio Lab is ready to rock!")
+    logger.info("=== Test Complete ===")
+    return True
+
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)
+EOL
+        echo -e "${GREEN}${BOLD}[✓] Audio lab test script created${RESET}"
+    fi
+    
+    # Run the test
+    python test_audio_lab.py
 }
 
 # Stop the application (find and kill the process)
@@ -252,17 +402,27 @@ show_help() {
     echo -e "${CYAN}${BOLD}Usage:${RESET}"
     echo -e "  ${GREEN}./scripts/manage.sh${RESET} ${YELLOW}<command>${RESET}"
     echo
-    echo -e "${CYAN}${BOLD}Commands:${RESET}"
+    echo -e "${CYAN}${BOLD}Basic Commands:${RESET}"
     echo -e "  ${YELLOW}setup${RESET}      Create virtual environment and install dependencies"
     echo -e "  ${YELLOW}models${RESET}     Download speaker embedding models to local directory"
-    echo -e "  ${YELLOW}start${RESET}      Start the application"
+    echo -e "  ${YELLOW}start${RESET}      Start the standard CyberVox application"
     echo -e "  ${YELLOW}stop${RESET}       Stop the application"
     echo -e "  ${YELLOW}restart${RESET}    Restart the application"
+    echo
+    echo -e "${MAGENTA}${BOLD}🧪 Trisha's Audio Lab Commands:${RESET}"
+    echo -e "  ${YELLOW}lab${RESET}        🧪⚡ Start Trisha's Audio Lab Demo (enhanced features)"
+    echo -e "  ${YELLOW}test-lab${RESET}   🔬 Test audio enhancement functionality"
+    echo
+    echo -e "${CYAN}${BOLD}Maintenance Commands:${RESET}"
     echo -e "  ${YELLOW}update${RESET}     Update dependencies"
     echo -e "  ${YELLOW}clean${RESET}      Clean cache files"
-    echo -e "  ${YELLOW}test${RESET}       Run tests"
+    echo -e "  ${YELLOW}test${RESET}       Run standard tests"
     echo -e "  ${YELLOW}gpu${RESET}        Test GPU functionality"
     echo -e "  ${YELLOW}help${RESET}       Show this help message"
+    echo
+    echo -e "${GREEN}${BOLD}🎯 Quick Start:${RESET}"
+    echo -e "  ${CYAN}1.${RESET} ${GREEN}./scripts/manage.sh setup${RESET}    # Install everything"
+    echo -e "  ${CYAN}2.${RESET} ${GREEN}./scripts/manage.sh lab${RESET}      # Start Trisha's Lab! 🧪"
 }
 
 # Main script logic
@@ -291,6 +451,16 @@ main() {
             activate_venv
             start_app
             ;;
+        lab)
+            check_venv
+            activate_venv
+            start_lab
+            ;;
+        test-lab)
+            check_venv
+            activate_venv
+            test_lab
+            ;;
         stop)
             stop_app
             ;;
@@ -300,6 +470,13 @@ main() {
             check_venv
             activate_venv
             start_app
+            ;;
+        restart-lab)
+            stop_app
+            sleep 2
+            check_venv
+            activate_venv
+            start_lab
             ;;
         update)
             check_venv
