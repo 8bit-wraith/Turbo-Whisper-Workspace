@@ -7,14 +7,17 @@ transcription, diarization, and LLM-based enhancements.
 
 import sys
 import time
+import os
+import json
+import hashlib
+import re
 import torch
 import numpy as np
 from typing import Dict, List, Optional, Union, Any, Tuple
 import traceback
 
 # Import from diar.py
-from vocalis.core.diar import SpeakerDiarizer, format_as_conversation
-from vocalis.core.audio_utils import read_audio_file, get_audio_duration
+# Avoid importing heavy optional deps here; pull utilities lazily when needed
 
 # Import LLM helper if available
 try:
@@ -236,7 +239,8 @@ class AudioProcessingPipeline:
                 return True
         
         try:
-            # We already imported SpeakerDiarizer from diar at the top of the file
+            # Import locally to avoid heavy deps at module import time
+            from vocalis.core.diar import SpeakerDiarizer
             # Create SpeakerDiarizer instance
             # Let's try a more direct approach with SpeakerDiarizer
             print("🎯 Setting up diarizer with optimized configuration")
@@ -567,7 +571,8 @@ class AudioProcessingPipeline:
     def process_audio(self, audio_path: str, task: str = "transcribe", 
                      segmentation_model: str = "pyannote/segmentation-3.0",
                      embedding_model: str = "3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx|25.3MB",
-                     num_speakers: int = 2, threshold: float = 0.5) -> Dict[str, Any]:
+                     num_speakers: int = 2, threshold: float = 0.5,
+                     use_cache: bool = True, force_reprocess: bool = False) -> Dict[str, Any]:
         """
         Process audio with transcription and diarization.
         
@@ -584,6 +589,28 @@ class AudioProcessingPipeline:
         """
         start_time = time.time()
         processing_times = {}
+
+        # Result cache: keyed by audio file content hash and processing params
+        cache_key = None
+        if use_cache and not force_reprocess:
+            try:
+                cache_key = self._build_cache_key(
+                    audio_path=audio_path,
+                    task=task,
+                    segmentation_model=segmentation_model,
+                    embedding_model=embedding_model,
+                    num_speakers=num_speakers,
+                    threshold=threshold,
+                )
+                cached = self._cache_read(cache_key)
+                if cached:
+                    cached.setdefault("processing_times", {})
+                    cached.setdefault("duration", 0)
+                    cached["from_cache"] = True
+                    return cached
+            except Exception:
+                # Fail closed: ignore cache on any error
+                pass
         
         try:
             # Step 1: Transcribe audio
@@ -628,14 +655,7 @@ class AudioProcessingPipeline:
             merged_segments = self._merge_transcription_with_diarization(transcription, diarization_segments)
             
             # Step 4: Get audio duration
-            try:
-                duration = get_audio_duration(audio_path)
-            except Exception:
-                # Estimate duration from segments
-                if merged_segments:
-                    duration = max([s.get("end", 0) for s in merged_segments])
-                else:
-                    duration = 0
+            duration = self._get_duration_safe(audio_path, merged_segments)
             
             # Step 5: Identify speaker names if LLM is available
             speaker_names = {}
@@ -680,12 +700,102 @@ class AudioProcessingPipeline:
             if topics:
                 result["topics"] = topics
                 
+            # Persist to cache if enabled
+            if use_cache:
+                try:
+                    if cache_key is None:
+                        cache_key = self._build_cache_key(
+                            audio_path=audio_path,
+                            task=task,
+                            segmentation_model=segmentation_model,
+                            embedding_model=embedding_model,
+                            num_speakers=num_speakers,
+                            threshold=threshold,
+                        )
+                    to_store = dict(result)
+                    to_store["from_cache"] = False
+                    self._cache_write(cache_key, to_store)
+                except Exception:
+                    # Ignore cache write failures silently
+                    pass
+
             return result
             
         except Exception as e:
             import traceback
             traceback.print_exc()
             return {"error": f"Processing error: {str(e)}"}
+
+    # ----------------------------
+    # Cache helpers
+    # ----------------------------
+    def _get_duration_safe(self, audio_path: str, merged_segments: List[Dict[str, Any]]) -> float:
+        """Get duration using optional deps if present; fall back to segment end time."""
+        try:
+            # Lazy import to avoid hard dependency during tests
+            from vocalis.core.audio_utils import get_audio_duration  # type: ignore
+            return float(get_audio_duration(audio_path))
+        except Exception:
+            # Estimate duration from segments as a fallback
+            if merged_segments:
+                try:
+                    return float(max(s.get("end", 0.0) for s in merged_segments))
+                except Exception:
+                    return 0.0
+            return 0.0
+    def _get_cache_dir(self) -> str:
+        """Return cache directory, creating it if necessary."""
+        cache_dir = os.environ.get("TW_CACHE_DIR", os.path.join(os.getcwd(), ".tw_cache"))
+        try:
+            os.makedirs(cache_dir, exist_ok=True)
+        except Exception:
+            # Fallback to temp directory
+            cache_dir = os.path.join("/tmp", "tw_cache")
+            os.makedirs(cache_dir, exist_ok=True)
+        return cache_dir
+
+    def _compute_audio_hash(self, audio_path: str) -> str:
+        """Compute SHA256 of the audio file contents in streaming fashion."""
+        hasher = hashlib.sha256()
+        with open(audio_path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    def _sanitize_for_key(self, value: str) -> str:
+        """Sanitize a string so it can safely be used in filenames."""
+        return re.sub(r"[^A-Za-z0-9._-]", "_", value)
+
+    def _build_cache_key(self, audio_path: str, task: str, segmentation_model: str,
+                         embedding_model: str, num_speakers: int, threshold: float) -> str:
+        """Build a deterministic cache key from inputs and file hash."""
+        file_hash = self._compute_audio_hash(audio_path)
+        parts = [
+            file_hash,
+            task,
+            segmentation_model,
+            embedding_model,
+            str(num_speakers),
+            f"{threshold:.3f}",
+        ]
+        return "_".join(self._sanitize_for_key(p) for p in parts)
+
+    def _cache_path(self, key: str) -> str:
+        return os.path.join(self._get_cache_dir(), f"{key}.json")
+
+    def _cache_read(self, key: str) -> Optional[Dict[str, Any]]:
+        path = self._cache_path(key)
+        if not os.path.exists(path):
+            return None
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _cache_write(self, key: str, data: Dict[str, Any]) -> None:
+        path = self._cache_path(key)
+        tmp_path = f"{path}.tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp_path, path)
     
     def _merge_transcription_with_diarization(self, transcription, diarization_segments):
         """
@@ -718,9 +828,29 @@ class AudioProcessingPipeline:
                 })
             return result
             
-        # Create SpeakerDiarizer instance for merging
-        from vocalis.core.diar import SpeakerDiarizer
-        diarizer = SpeakerDiarizer()
-        
-        # Use the create_transcript_with_speakers method
-        return diarizer.create_transcript_with_speakers(transcript_segments, diarization_segments)
+        # Lightweight merge without importing heavy diarization utilities
+        def _overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> float:
+            start = max(a_start or 0.0, b_start or 0.0)
+            end = min(a_end or start, b_end or start)
+            return max(0.0, end - start)
+
+        result = []
+        for seg in transcript_segments:
+            t_start = float(seg.get("start", 0.0))
+            t_end = float(seg.get("end", t_start))
+            best_speaker = None
+            best_overlap = 0.0
+            for d in diarization_segments:
+                d_start = float(d.get("start", 0.0))
+                d_end = float(d.get("end", d_start))
+                ov = _overlap(t_start, t_end, d_start, d_end)
+                if ov > best_overlap:
+                    best_overlap = ov
+                    best_speaker = d.get("speaker", None)
+            result.append({
+                "speaker": best_speaker if best_speaker is not None else "Speaker 0",
+                "text": seg.get("text", ""),
+                "start": t_start,
+                "end": t_end,
+            })
+        return result

@@ -69,13 +69,13 @@ def process_audio_with_diarization(audio_path, task, segmentation_model, embeddi
         duration = pipeline_result.get("duration", 0)
         processing_times = pipeline_result.get("processing_times", {})
         
-        # Convert to speaker segments format for plotting
+        # Convert to speaker segments format for plotting (guard against missing keys)
         speaker_segments = []
         for segment in segments:
             speaker_segments.append({
-                "start": segment["start"],
-                "end": segment["end"],
-                "speaker": segment["speaker"]
+                "start": segment.get("start", 0),
+                "end": segment.get("end", 0),
+                "speaker": segment.get("speaker", "Speaker 0"),
             })
         
         # Format as conversation

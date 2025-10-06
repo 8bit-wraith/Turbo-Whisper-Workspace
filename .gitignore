@@ -15,3 +15,11 @@ bar_security/
 deepfilter_test_results/
 
 test_temps/
+
+target/
+
+
+examples/
+examplesold/
+
+.DS_Store

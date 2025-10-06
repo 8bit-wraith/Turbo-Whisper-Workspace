@@ -26,7 +26,7 @@ def highpass_filter(y, sr, cutoff):
 # --- Configurable directories ---
 INPUT_DIR = 'examples/Test1'
 OUTPUT_DIR = 'examples/Test1'  # Can be changed if needed
-INPUT_EXT = '.flac'
+INPUT_EXT = '.m4a'
 FINAL_SUFFIX = '_denoised_quiet.wav'
 
 # --- Utility: Normalize audio to -1..1 range ---
@@ -50,14 +50,6 @@ def process_all_files():
         sf.write(orig_wav, y_norm, sr)
         print(f"Saved: {orig_wav}")
         run_whisper(orig_wav, f"{base}_orignorm_whisper.json")
-
-        # --- 2. High-pass filter (try all cutoffs!) ---
-        for cutoff in HIGHPASS_CUTOFFS:
-            y_hp = normalize_audio(highpass_filter(y_norm, sr, cutoff))
-            hp_wav = os.path.join(OUTPUT_DIR, f"{base}_highpass{cutoff}.wav")
-            sf.write(hp_wav, y_hp, sr)
-            print(f"Saved: {hp_wav}")
-            run_whisper(hp_wav, f"{base}_highpass{cutoff}_whisper.json")
 
         # --- 3. Denoised ---
         y_denoised = normalize_audio(nr.reduce_noise(y=y_norm, sr=sr, y_noise=y_norm[:sr]))
@@ -112,7 +104,7 @@ def run_whisper(wav_path, transcript_name):
         print(f"Skipping transcription for {wav_path} (already exists: {transcript_path})")
         return
     print(f"Transcribing {wav_path} with insanely-fast-whisper...")
-    cmd = f"PYTORCH_ENABLE_MPS_FALLBACK=1 insanely-fast-whisper -translate --file-name '{wav_path}' --device-id mps --transcript-path '{transcript_path}'"
+    cmd = f"PYTORCH_ENABLE_MPS_FALLBACK=1 insanely-fast-whisper --file-name '{wav_path}' --device-id mps --transcript-path '{transcript_path}'"
     print(f"Running: {cmd}")
     ret = os.system(cmd)
     output_json = os.path.join(OUTPUT_DIR, "output.json")

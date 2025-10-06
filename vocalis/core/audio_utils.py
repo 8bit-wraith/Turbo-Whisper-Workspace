@@ -9,10 +9,24 @@ This module provides utility functions for audio processing, including:
 
 import os
 import numpy as np
-import librosa
-import soundfile as sf
-from pydub import AudioSegment
+try:
+    import soundfile as sf  # type: ignore
+    SF_AVAILABLE = True
+except Exception:
+    SF_AVAILABLE = False
+try:
+    from pydub import AudioSegment  # type: ignore
+    PYDUB_AVAILABLE = True
+except Exception:
+    PYDUB_AVAILABLE = False
 from typing import Tuple, Optional
+
+# Optional dependency: librosa
+try:
+    import librosa  # type: ignore
+    LIBROSA_AVAILABLE = True
+except Exception:
+    LIBROSA_AVAILABLE = False
 
 def read_audio_file(audio_path: str) -> Tuple[np.ndarray, int]:
     """
@@ -27,48 +41,49 @@ def read_audio_file(audio_path: str) -> Tuple[np.ndarray, int]:
         - Sample rate of the audio file
     """
     try:
-        # First attempt: Try using soundfile which is faster and more reliable for WAV/FLAC
-        try:
-            audio, sr = sf.read(audio_path)
-            # Convert to mono if needed
-            if len(audio.shape) > 1 and audio.shape[1] > 1:
-                audio = audio.mean(axis=1)
-            # Ensure float32 and normalized to [-1, 1]
-            audio = audio.astype(np.float32)
-            if audio.max() > 1.0 or audio.min() < -1.0:
-                audio = audio / max(abs(audio.max()), abs(audio.min()))
-            return audio, sr
-        except Exception as e:
-            print(f"Soundfile failed: {e}, trying librosa...")
+        # First attempt: Try using soundfile if available
+        if SF_AVAILABLE:
+            try:
+                audio, sr = sf.read(audio_path)
+                if len(getattr(audio, "shape", ())) > 1:
+                    # If stereo, average channels
+                    try:
+                        if audio.shape[1] > 1:
+                            audio = audio.mean(axis=1)
+                    except Exception:
+                        pass
+                audio = np.asarray(audio, dtype=np.float32)
+                if audio.size > 0 and (audio.max() > 1.0 or audio.min() < -1.0):
+                    audio = audio / max(abs(float(audio.max())), abs(float(audio.min())))
+                return audio, sr
+            except Exception as e:
+                print(f"Soundfile failed: {e}, trying librosa...")
             
-        # Second attempt: Try using librosa's recommended approach
-        try:
-            # Use load instead of deprecated __audioread_load
-            audio, sr = librosa.load(audio_path, sr=None, mono=True)
-            # Ensure float32 and normalized to [-1, 1]
-            audio = audio.astype(np.float32)
-            if audio.max() > 1.0 or audio.min() < -1.0:
-                audio = audio / max(abs(audio.max()), abs(audio.min()))
-            return audio, sr
-        except Exception as e:
-            print(f"Librosa failed: {e}, trying pydub...")
+        # Second attempt: Try using librosa if available
+        if LIBROSA_AVAILABLE:
+            try:
+                audio, sr = librosa.load(audio_path, sr=None, mono=True)
+                audio = audio.astype(np.float32)
+                if audio.max() > 1.0 or audio.min() < -1.0:
+                    audio = audio / max(abs(audio.max()), abs(audio.min()))
+                return audio, sr
+            except Exception as e:
+                print(f"Librosa failed: {e}, trying pydub...")
             
-        # Third attempt: Try using pydub which handles even more formats
-        try:
-            audio_segment = AudioSegment.from_file(audio_path)
-            # Convert to mono if needed
-            if audio_segment.channels > 1:
-                audio_segment = audio_segment.set_channels(1)
-            
-            # Convert to numpy array
-            samples = np.array(audio_segment.get_array_of_samples())
-            # Convert to float32 and normalize
-            samples = samples.astype(np.float32)
-            samples = samples / (1 << (8 * audio_segment.sample_width - 1))
-            
-            return samples, audio_segment.frame_rate
-        except Exception as e:
-            print(f"Pydub failed: {e}")
+        # Third attempt: Try using pydub if available
+        if PYDUB_AVAILABLE:
+            try:
+                audio_segment = AudioSegment.from_file(audio_path)
+                if getattr(audio_segment, "channels", 1) > 1:
+                    audio_segment = audio_segment.set_channels(1)
+                samples = np.array(audio_segment.get_array_of_samples())
+                samples = samples.astype(np.float32)
+                # Avoid division by zero
+                denom = max(1, (1 << (8 * audio_segment.sample_width - 1)))
+                samples = samples / denom
+                return samples, audio_segment.frame_rate
+            except Exception as e:
+                print(f"Pydub failed: {e}")
             
     except Exception as e:
         print(f"Error reading audio file: {e}")
@@ -85,17 +100,18 @@ def get_audio_duration(audio_path: str) -> float:
     Returns:
         Duration in seconds
     """
-    try:
-        # Try using librosa which is more reliable for duration
-        return librosa.get_duration(path=audio_path)
-    except Exception:
+    if LIBROSA_AVAILABLE:
         try:
-            # Try using pydub as fallback
+            return librosa.get_duration(path=audio_path)
+        except Exception:
+            pass
+    if PYDUB_AVAILABLE:
+        try:
             audio = AudioSegment.from_file(audio_path)
-            return audio.duration_seconds
+            return float(audio.duration_seconds)
         except Exception as e:
             print(f"Error getting audio duration: {e}")
-            return 0.0
+    return 0.0
 
 def convert_audio_format(input_path: str, output_path: str, format: str = "wav", 
                         sample_rate: int = 16000, channels: int = 1) -> bool:
