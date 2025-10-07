@@ -1,0 +1,27 @@
+{
+  "session_id": "aea64b3d-d5cb-4b02-b246-a00cf80c737c",
+  "last_saved": "2025-10-06T22:29:54.852563840Z",
+  "working_directory": "/aidata/Turbo-Whisper-Workspace",
+  "project_context": {
+    "project_name": "unknown",
+    "project_type": "unknown",
+    "key_files": [],
+    "dependencies": [],
+    "current_focus": ""
+  },
+  "file_history": [],
+  "tokenization_rules": {
+    "target": 130,
+    "node_modules": 128,
+    "dist": 131,
+    ".git": 129
+  },
+  "insights": [],
+  "philosophy": {
+    "sid_waves": true,
+    "vic_sprites": true,
+    "c64_nostalgia": "A gentleman and a scholar indeed!"
+  },
+  "todos": [],
+  "notes": ""
+}

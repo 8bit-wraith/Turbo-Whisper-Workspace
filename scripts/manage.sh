@@ -413,6 +413,10 @@ show_help() {
     echo -e "  ${YELLOW}lab${RESET}        🧪⚡ Start Trisha's Audio Lab Demo (enhanced features)"
     echo -e "  ${YELLOW}test-lab${RESET}   🔬 Test audio enhancement functionality"
     echo
+    echo -e "${CYAN}${BOLD}🌊🧠 Marine Consciousness Commands:${RESET}"
+    echo -e "  ${YELLOW}consciousness${RESET} 🧠 Launch Marine Consciousness Dashboard"
+    echo -e "  ${YELLOW}marine-demo${RESET}   🌊 Run Marine-Sense integration demo"
+    echo
     echo -e "${CYAN}${BOLD}Maintenance Commands:${RESET}"
     echo -e "  ${YELLOW}update${RESET}     Update dependencies"
     echo -e "  ${YELLOW}clean${RESET}      Clean cache files"
@@ -494,6 +498,18 @@ main() {
             check_venv
             activate_venv
             test_gpu
+            ;;
+        consciousness)
+            check_venv
+            activate_venv
+            echo -e "${CYAN}${BOLD}[*] 🌊🧠 Launching Marine Consciousness Dashboard...${RESET}"
+            python app_marine_consciousness.py
+            ;;
+        marine-demo)
+            check_venv
+            activate_venv
+            echo -e "${CYAN}${BOLD}[*] 🌊 Running Marine-Sense integration demo...${RESET}"
+            python marine_integration_demo.py
             ;;
         help)
             show_help
