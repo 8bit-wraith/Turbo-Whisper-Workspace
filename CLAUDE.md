@@ -16,6 +16,14 @@ The AudioProcessingPipeline class orchestrates the entire audio workflow:
 - Implements caching system to avoid redundant processing
 - Integrates with LLM for conversation summarization and enhancements
 
+### Marine-Enhanced Pipeline (`vocalis/core/marine_enhanced_pipeline.py`) ⭐ NEW
+Marine-Sense integration adds advanced audio intelligence:
+- **Marine VAD**: O(1) voice activity detection (removes silence before transcription)
+- **Sound Localization**: Multi-channel TDOA triangulation for 3D source tracking
+- **Salience Scoring**: Identifies "consciousness moments" (most important audio segments)
+- **Emotional Analysis**: Ultrasonic frequency analysis (requires 192kHz audio)
+- See `MARINE_VAD_LOCALIZATION.md` for full documentation
+
 ### Security Monitoring System
 - `vocalis/security/security_monitor.py` - General security incident detection
 - `vocalis/security/bar_security_monitor.py` - Specialized monitoring for bar/venue environments
@@ -48,6 +56,9 @@ The AudioProcessingPipeline class orchestrates the entire audio workflow:
 # Start Trisha's Audio Lab (enhanced features demo)
 ./scripts/manage.sh lab
 
+# Demo Marine-Sense features (VAD, localization, salience)
+python demo_marine_features.py
+
 # Stop running application
 ./scripts/manage.sh stop
 
@@ -69,6 +80,9 @@ python app_api.py
 # Run all tests with unittest
 ./scripts/manage.sh test
 python -m unittest discover -s tests
+
+# Test Marine features (VAD, localization, salience)
+python tests/test_marine_features.py
 
 # Test GPU functionality
 ./scripts/manage.sh gpu
