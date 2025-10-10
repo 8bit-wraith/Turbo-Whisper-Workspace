@@ -1,0 +1,35 @@
+{
+  "compiler": "rustc 1.89.0",
+  "language": "Rust",
+  "optimization": "opt-level=3, lto=true, codegen-units=1",
+  "tests": [
+    {
+      "duration_ms": 0.10071899999999999,
+      "name": "1s @ 16kHz",
+      "peak_count": 4244,
+      "realtime_factor": 9928.613270584498,
+      "throughput_msamples": 158.85781232935196
+    },
+    {
+      "duration_ms": 0.9854620000000001,
+      "name": "10s @ 16kHz",
+      "peak_count": 42058,
+      "realtime_factor": 10147.52471429644,
+      "throughput_msamples": 162.36039542874306
+    },
+    {
+      "duration_ms": 4.230193,
+      "name": "60s @ 16kHz",
+      "peak_count": 252932,
+      "realtime_factor": 14183.750008569348,
+      "throughput_msamples": 226.94000013710956
+    },
+    {
+      "duration_ms": 2.6471799999999996,
+      "name": "10s @ 48kHz",
+      "peak_count": 150727,
+      "realtime_factor": 3777.6048474225404,
+      "throughput_msamples": 181.32503267628192
+    }
+  ]
+}

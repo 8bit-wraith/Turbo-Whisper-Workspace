@@ -1,0 +1,40 @@
+{
+  "language": "Python",
+  "version": "3.13.7",
+  "numpy_version": "2.3.3",
+  "platform": "Linux-6.15.0-rc7-6-cachyos-rc-gcc-x86_64-with-glibc2.42",
+  "tests": [
+    {
+      "name": "1s @ 16kHz",
+      "duration_ms": 3.991945006418973,
+      "throughput_msamples": 4.008071247041805,
+      "realtime_factor": 250.5044529401128,
+      "peak_count": 4226,
+      "max_salience": 4586.67236328125
+    },
+    {
+      "name": "10s @ 16kHz",
+      "duration_ms": 40.0966209708713,
+      "throughput_msamples": 3.990361185702756,
+      "realtime_factor": 249.39757410642227,
+      "peak_count": 42160,
+      "max_salience": 14338.4091796875
+    },
+    {
+      "name": "60s @ 16kHz",
+      "duration_ms": 238.02268703002483,
+      "throughput_msamples": 4.0332289832477315,
+      "realtime_factor": 252.0768114529832,
+      "peak_count": 252832,
+      "max_salience": 58959.296875
+    },
+    {
+      "name": "10s @ 48kHz",
+      "duration_ms": 129.20548202237114,
+      "throughput_msamples": 3.715012648742651,
+      "realtime_factor": 77.39609684880523,
+      "peak_count": 150957,
+      "max_salience": 30291.7578125
+    }
+  ]
+}
