@@ -24,3 +24,10 @@ examplesold/
 
 .DS_Store
 192k/
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.zip
+*.tar.gz
+
