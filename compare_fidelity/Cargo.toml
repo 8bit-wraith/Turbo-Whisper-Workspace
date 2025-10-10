@@ -1,0 +1,27 @@
+[package]
+name = "compare_fidelity"
+version = "0.2.0"
+edition = "2021"
+authors = ["Hue & Claude <team@8b.is>"]
+description = "Golden-ratio ultrasonic restoration with Marine-Sense integration"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hound = "3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rustfft = "6"
+# decode mp3/wav/flac/aac (whatever symphonia supports locally)
+symphonia = { version = "0.5", features = ["mp3", "wav", "flac", "isomp4", "aac"] }
+
+# Marine-Sense integration
+marine-algorithm = { path = "/aidata/ayeverse/Marine-Sense/marine-rust" }
+ndarray = "0.15"
+
+[profile.release]
+opt-level = 3              # Maximum optimization
+lto = true                 # Link-time optimization
+codegen-units = 1          # Single codegen unit
+panic = "abort"            # No unwinding overhead
+strip = true               # Smallest binary
