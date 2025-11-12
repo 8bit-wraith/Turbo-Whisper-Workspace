@@ -272,43 +272,110 @@ cyberpunk_theme = gr.themes.Soft(
     body_background_fill="#111111",
 )
 
-# Build Gradio UI
-with gr.Blocks(theme=cyberpunk_theme, css="""
-    #title {text-align: center; margin-bottom: 10px;}
+# Build Gradio UI with enhanced CSS and JavaScript
+enhanced_css = """
+    /* === Title and Header === */
+    #title {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(0, 255, 157, 0.1) 0%, rgba(0, 204, 255, 0.1) 100%);
+        border-radius: 15px;
+        border: 2px solid #00ff9d;
+        box-shadow: 0 0 30px rgba(0, 255, 157, 0.2);
+    }
     #title h1 {
-        background: linear-gradient(90deg, #00ff9d 0%, #00ccff 100%);
+        background: linear-gradient(90deg, #00ff9d 0%, #00ccff 50%, #ff00ff 75%, #00ff9d 100%);
+        background-size: 200% auto;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 800;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
+        animation: gradient-shift 3s linear infinite;
+        margin: 0;
     }
+    @keyframes gradient-shift {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+    }
+
+    /* === Status Bar === */
     .status-bar {
         border-left: 4px solid #00ff9d;
-        padding-left: 10px;
-        background-color: rgba(0, 255, 157, 0.1);
+        padding: 15px;
+        background: linear-gradient(90deg, rgba(0, 255, 157, 0.15) 0%, rgba(0, 255, 157, 0.05) 100%);
+        border-radius: 8px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
     }
-    .footer {text-align: center; opacity: 0.7; margin-top: 20px;}
-    .tabbed-content {min-height: 400px;}
-    
-    /* Chat Bubbles CSS */
+    .status-bar:hover {
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+    }
+
+    /* === Footer === */
+    .footer {
+        text-align: center;
+        opacity: 0.7;
+        margin-top: 30px;
+        padding: 20px;
+        border-top: 1px solid #333;
+    }
+
+    /* === Tab Content === */
+    .tabbed-content {
+        min-height: 600px;
+    }
+
+    /* === Chat Bubbles === */
     .chat-container {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 15px;
-        max-height: 500px;
-        height: 500px;
+        gap: 12px;
+        padding: 20px;
+        max-height: 600px;
+        height: 600px;
         overflow-y: auto;
-        background-color: #1a1a1a;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        border-radius: 12px;
         border: 1px solid #333;
         scroll-behavior: smooth;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
     }
+    .chat-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-container::-webkit-scrollbar-track {
+        background: #0a0a0a;
+        border-radius: 4px;
+    }
+    .chat-container::-webkit-scrollbar-thumb {
+        background: #00ff9d;
+        border-radius: 4px;
+    }
+    .chat-container::-webkit-scrollbar-thumb:hover {
+        background: #00cc7a;
+    }
+
     .chat-message {
         display: flex;
         flex-direction: column;
         max-width: 85%;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .chat-message:hover {
+        transform: translateX(5px);
     }
     .chat-message.speaker-0 {
         align-self: flex-start;
@@ -316,84 +383,610 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
     .chat-message.speaker-1 {
         align-self: flex-end;
     }
-    .speaker-name {
-        font-size: 0.8em;
-        margin-bottom: 2px;
-        color: #00ff9d;
-        font-weight: bold;
+    .chat-message.speaker-0:hover {
+        transform: translateX(5px);
     }
+    .chat-message.speaker-1:hover {
+        transform: translateX(-5px);
+    }
+
+    .speaker-name {
+        font-size: 0.85em;
+        margin-bottom: 4px;
+        color: #00ff9d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
     .message-bubble {
-        padding: 10px 15px;
+        padding: 12px 18px;
         border-radius: 18px;
         position: relative;
         word-break: break-word;
+        line-height: 1.5;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .speaker-0 .message-bubble {
-        background-color: #333;
-        border-bottom-left-radius: 4px;
+        background: linear-gradient(135deg, #333 0%, #444 100%);
+        border-bottom-left-radius: 6px;
         color: #fff;
+        border: 1px solid #444;
     }
     .speaker-1 .message-bubble {
-        background-color: #00cc7a;
-        border-bottom-right-radius: 4px;
+        background: linear-gradient(135deg, #00cc7a 0%, #00ff9d 100%);
+        border-bottom-right-radius: 6px;
         color: #000;
+        font-weight: 500;
+        border: 1px solid #00ff9d;
     }
+
     .message-time {
-        font-size: 0.7em;
-        margin-top: 2px;
+        font-size: 0.75em;
+        margin-top: 6px;
         color: #999;
         align-self: flex-end;
+        opacity: 0.8;
+        font-family: monospace;
     }
+
     .active-message {
-        transform: scale(1.02);
+        transform: scale(1.03) !important;
+        z-index: 10;
     }
     .speaker-0.active-message .message-bubble {
-        background-color: #444;
-        box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+        background: linear-gradient(135deg, #444 0%, #555 100%);
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
+        border-color: #00ff9d;
     }
     .speaker-1.active-message .message-bubble {
-        background-color: #00ff9d;
-        box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+        background: linear-gradient(135deg, #00ff9d 0%, #00ffcc 100%);
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.6);
     }
-    .chat-controls {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 15px;
-    }
-    
-    /* Conversation Summary and Topics */
+
+    /* === Conversation Summary and Topics === */
     .conversation-summary, .conversation-topics {
-        background-color: #222;
-        border-radius: 8px;
-        padding: 15px;
+        background: linear-gradient(135deg, #222 0%, #1a1a1a 100%);
+        border-radius: 12px;
+        padding: 20px;
         margin-top: 20px;
         border-left: 4px solid #00ff9d;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .conversation-summary h3, .conversation-topics h4 {
         color: #00ff9d;
         margin-top: 0;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        font-weight: 700;
+        letter-spacing: 1px;
     }
     .conversation-summary p {
         color: #ddd;
-        line-height: 1.5;
+        line-height: 1.6;
     }
     .conversation-topics ul {
         margin: 0;
-        padding-left: 20px;
+        padding-left: 25px;
     }
     .conversation-topics li {
         color: #ddd;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
+        line-height: 1.5;
     }
-""") as demo:
+    .conversation-topics li::marker {
+        color: #00ff9d;
+    }
+
+    /* === Loading Spinner === */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0, 255, 157, 0.3);
+        border-top-color: #00ff9d;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* === Progress Bar === */
+    .progress-container {
+        width: 100%;
+        height: 6px;
+        background: #222;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #00ff9d 0%, #00ccff 50%, #ff00ff 100%);
+        background-size: 200% 100%;
+        animation: progress-shimmer 2s linear infinite;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+    @keyframes progress-shimmer {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 200% 0%; }
+    }
+
+    /* === Buttons === */
+    .gr-button {
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+    .gr-button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(0, 255, 157, 0.3) !important;
+    }
+    .gr-button:active {
+        transform: translateY(0) !important;
+    }
+
+    /* === Export Buttons === */
+    .export-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+        padding: 15px;
+        background: rgba(0, 255, 157, 0.05);
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
+    .export-btn {
+        background: linear-gradient(135deg, #00ff9d 0%, #00ccff 100%);
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9em;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .export-btn:hover {
+        background: linear-gradient(135deg, #00ccff 0%, #ff00ff 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 255, 157, 0.4);
+    }
+    .export-btn:active {
+        transform: translateY(0);
+    }
+
+    /* === Tooltips === */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        background-color: #00ff9d;
+        color: #000;
+        text-align: center;
+        padding: 8px 12px;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.85em;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* === Mobile Responsiveness === */
+    @media (max-width: 768px) {
+        #title h1 {
+            font-size: 1.5em;
+        }
+        .chat-message {
+            max-width: 95%;
+        }
+        .message-bubble {
+            padding: 10px 14px;
+            font-size: 0.9em;
+        }
+        .export-buttons {
+            flex-direction: column;
+        }
+        .export-btn {
+            width: 100%;
+        }
+    }
+
+    /* === Accessibility === */
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* === Focus Indicators === */
+    *:focus-visible {
+        outline: 2px solid #00ff9d;
+        outline-offset: 2px;
+    }
+"""
+
+enhanced_js = """
+<script>
+// === Global Variables ===
+let currentAudioPlayer = null;
+let currentTranscriptData = null;
+
+// === Audio Player Controls ===
+function initializeAudioPlayer() {
+    const audioElements = document.querySelectorAll('audio');
+    if (audioElements.length > 0) {
+        currentAudioPlayer = audioElements[audioElements.length - 1];
+        currentAudioPlayer.addEventListener('timeupdate', syncAudioWithTranscript);
+        currentAudioPlayer.addEventListener('loadedmetadata', function() {
+            console.log('Audio loaded successfully');
+        });
+    }
+}
+
+// === Audio-Transcript Synchronization ===
+function syncAudioWithTranscript() {
+    if (!currentAudioPlayer) return;
+
+    const currentTime = currentAudioPlayer.currentTime;
+    const messages = document.querySelectorAll('.chat-message');
+
+    messages.forEach(msg => {
+        const start = parseFloat(msg.dataset.start);
+        const end = parseFloat(msg.dataset.end);
+
+        if (currentTime >= start && currentTime <= end) {
+            msg.classList.add('active-message');
+            msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            msg.classList.remove('active-message');
+        }
+    });
+}
+
+// === Jump to Time Function ===
+function jumpToTime(time) {
+    if (currentAudioPlayer) {
+        currentAudioPlayer.currentTime = time;
+        if (currentAudioPlayer.paused) {
+            currentAudioPlayer.play();
+        }
+    }
+}
+
+// === Message Click Handler ===
+document.addEventListener('click', function(e) {
+    const message = e.target.closest('.chat-message');
+    if (message && message.dataset.start) {
+        jumpToTime(parseFloat(message.dataset.start));
+        message.classList.add('active-message');
+        setTimeout(() => {
+            if (!currentAudioPlayer || currentAudioPlayer.paused) {
+                message.classList.remove('active-message');
+            }
+        }, 2000);
+    }
+});
+
+// === Export Functions ===
+function exportJSON() {
+    try {
+        const jsonData = currentTranscriptData || {};
+        const dataStr = JSON.stringify(jsonData, null, 2);
+        downloadFile(dataStr, 'vocalis_transcript.json', 'application/json');
+        showNotification('✅ JSON exported successfully!', 'success');
+    } catch (e) {
+        showNotification('❌ Error exporting JSON: ' + e.message, 'error');
+    }
+}
+
+function exportCSV() {
+    try {
+        const data = currentTranscriptData || {};
+        const segments = data.segments || [];
+        const speakerNames = data.speaker_names || {};
+
+        let csv = 'Start Time,End Time,Speaker,Text\\n';
+        segments.forEach(segment => {
+            const speaker = speakerNames[segment.speaker] || segment.speaker || 'Unknown';
+            const text = (segment.text || '').replace(/"/g, '""');
+            csv += `"${segment.start || 0}","${segment.end || 0}","${speaker}","${text}"\\n`;
+        });
+
+        downloadFile(csv, 'vocalis_transcript.csv', 'text/csv');
+        showNotification('✅ CSV exported successfully!', 'success');
+    } catch (e) {
+        showNotification('❌ Error exporting CSV: ' + e.message, 'error');
+    }
+}
+
+function exportSRT() {
+    try {
+        const data = currentTranscriptData || {};
+        const segments = data.segments || [];
+        const speakerNames = data.speaker_names || {};
+
+        let srt = '';
+        segments.forEach((segment, index) => {
+            if (!segment.text) return;
+
+            const speaker = speakerNames[segment.speaker] || segment.speaker || 'Unknown';
+            const start = formatSRTTime(segment.start || 0);
+            const end = formatSRTTime(segment.end || 0);
+
+            srt += `${index + 1}\\n`;
+            srt += `${start} --> ${end}\\n`;
+            srt += `[${speaker}]: ${segment.text}\\n\\n`;
+        });
+
+        downloadFile(srt, 'vocalis_subtitles.srt', 'text/plain');
+        showNotification('✅ SRT exported successfully!', 'success');
+    } catch (e) {
+        showNotification('❌ Error exporting SRT: ' + e.message, 'error');
+    }
+}
+
+function exportTXT() {
+    try {
+        const data = currentTranscriptData || {};
+        const segments = data.segments || [];
+        const speakerNames = data.speaker_names || {};
+
+        let txt = '=== Vocalis Transcript ===\\n\\n';
+
+        if (data.summary) {
+            txt += '--- Summary ---\\n' + data.summary + '\\n\\n';
+        }
+
+        if (data.topics && data.topics.length > 0) {
+            txt += '--- Topics ---\\n' + data.topics.join('\\n') + '\\n\\n';
+        }
+
+        txt += '--- Conversation ---\\n\\n';
+        segments.forEach(segment => {
+            if (!segment.text) return;
+
+            const speaker = speakerNames[segment.speaker] || segment.speaker || 'Unknown';
+            const start = segment.start || 0;
+            const end = segment.end || 0;
+
+            txt += `[${formatTime(start)} - ${formatTime(end)}] ${speaker}: ${segment.text}\\n\\n`;
+        });
+
+        downloadFile(txt, 'vocalis_transcript.txt', 'text/plain');
+        showNotification('✅ TXT exported successfully!', 'success');
+    } catch (e) {
+        showNotification('❌ Error exporting TXT: ' + e.message, 'error');
+    }
+}
+
+// === Helper Functions ===
+function formatSRTTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const millis = Math.floor((seconds % 1) * 1000);
+    return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(secs, 2)},${pad(millis, 3)}`;
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${pad(minutes, 2)}:${pad(secs, 2)}`;
+}
+
+function pad(num, size) {
+    let s = num + '';
+    while (s.length < size) s = '0' + s;
+    return s;
+}
+
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#00ff9d' : type === 'error' ? '#ff4444' : '#00ccff'};
+        color: #000;
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        animation: slideInRight 0.3s ease-out;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// === Keyboard Shortcuts ===
+document.addEventListener('keydown', function(e) {
+    // Space - Play/Pause
+    if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        if (currentAudioPlayer) {
+            if (currentAudioPlayer.paused) {
+                currentAudioPlayer.play();
+            } else {
+                currentAudioPlayer.pause();
+            }
+        }
+    }
+
+    // Left Arrow - Rewind 5s
+    if (e.code === 'ArrowLeft' && currentAudioPlayer) {
+        currentAudioPlayer.currentTime = Math.max(0, currentAudioPlayer.currentTime - 5);
+    }
+
+    // Right Arrow - Forward 5s
+    if (e.code === 'ArrowRight' && currentAudioPlayer) {
+        currentAudioPlayer.currentTime = Math.min(currentAudioPlayer.duration, currentAudioPlayer.currentTime + 5);
+    }
+
+    // Ctrl/Cmd + E - Export Menu
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyE') {
+        e.preventDefault();
+        showNotification('Export shortcuts: J=JSON, C=CSV, S=SRT, T=TXT', 'info');
+    }
+
+    // Export shortcuts (with Ctrl/Cmd)
+    if (e.ctrlKey || e.metaKey) {
+        if (e.code === 'KeyJ') { e.preventDefault(); exportJSON(); }
+        if (e.code === 'KeyC' && e.shiftKey) { e.preventDefault(); exportCSV(); }
+        if (e.code === 'KeyS' && e.shiftKey) { e.preventDefault(); exportSRT(); }
+        if (e.code === 'KeyT' && e.shiftKey) { e.preventDefault(); exportTXT(); }
+    }
+});
+
+// === Store transcript data globally ===
+function storeTranscriptData(data) {
+    currentTranscriptData = data;
+    console.log('Transcript data stored for export');
+}
+
+// === Initialize on load ===
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAudioPlayer();
+    console.log('CyberVox Audio Workspace initialized');
+    console.log('Keyboard shortcuts: Space=Play/Pause, ←/→=Seek, Ctrl+E=Export Help');
+});
+
+// Also try immediate initialization if DOM is ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initializeAudioPlayer, 500);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+"""
+
+with gr.Blocks(theme=cyberpunk_theme, css=enhanced_css, js=enhanced_js) as demo:
     with gr.Row():
         with gr.Column():
             gr.HTML("""
             <div id="title">
                 <h1>🎧 CyberVox Audio Workspace ⚡</h1>
-                <p>Advanced audio processing with Whisper V3 Turbo and Speaker Diarization</p>
+                <p style='font-size: 1.1em; margin: 10px 0; color: #00ccff;'>Advanced Audio Processing with AI-Powered Transcription</p>
+                <div style='display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 15px;'>
+                    <span style='background: linear-gradient(135deg, rgba(0, 255, 157, 0.2), rgba(0, 255, 157, 0.1));
+                                 padding: 8px 16px; border-radius: 20px; font-size: 0.9em; border: 1px solid #00ff9d;
+                                 display: flex; align-items: center; gap: 6px;'>
+                        ⚡ Whisper V3 Turbo
+                    </span>
+                    <span style='background: linear-gradient(135deg, rgba(0, 204, 255, 0.2), rgba(0, 204, 255, 0.1));
+                                 padding: 8px 16px; border-radius: 20px; font-size: 0.9em; border: 1px solid #00ccff;
+                                 display: flex; align-items: center; gap: 6px;'>
+                        🎤 Speaker Diarization
+                    </span>
+                    <span style='background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.1));
+                                 padding: 8px 16px; border-radius: 20px; font-size: 0.9em; border: 1px solid #ff00ff;
+                                 display: flex; align-items: center; gap: 6px;'>
+                        🧪 Audio Enhancement
+                    </span>
+                    <span style='background: linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.1));
+                                 padding: 8px 16px; border-radius: 20px; font-size: 0.9em; border: 1px solid #00ffcc;
+                                 display: flex; align-items: center; gap: 6px;'>
+                        📊 Audio Analysis
+                    </span>
+                </div>
+                <details style='margin-top: 20px; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; border: 1px solid #333;'>
+                    <summary style='cursor: pointer; font-weight: 600; color: #00ff9d; font-size: 1em; user-select: none;'>
+                        ℹ️ Features & Keyboard Shortcuts
+                    </summary>
+                    <div style='margin-top: 15px; color: #ddd; line-height: 1.8;'>
+                        <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px;'>
+                            <div style='background: rgba(0, 255, 157, 0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #00ff9d;'>
+                                <strong style='color: #00ff9d;'>🎯 Core Features</strong>
+                                <ul style='margin: 8px 0; padding-left: 20px; font-size: 0.9em;'>
+                                    <li>Ultra-fast transcription</li>
+                                    <li>Multi-speaker detection</li>
+                                    <li>Real-time audio sync</li>
+                                    <li>AI-powered summaries</li>
+                                </ul>
+                            </div>
+                            <div style='background: rgba(0, 204, 255, 0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #00ccff;'>
+                                <strong style='color: #00ccff;'>⌨️ Keyboard Shortcuts</strong>
+                                <ul style='margin: 8px 0; padding-left: 20px; font-size: 0.9em;'>
+                                    <li><code>Space</code> - Play/Pause audio</li>
+                                    <li><code>←/→</code> - Seek backward/forward</li>
+                                    <li><code>Ctrl+J</code> - Export JSON</li>
+                                    <li><code>Ctrl+Shift+C</code> - Export CSV</li>
+                                </ul>
+                            </div>
+                            <div style='background: rgba(255, 0, 255, 0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #ff00ff;'>
+                                <strong style='color: #ff00ff;'>💡 Pro Tips</strong>
+                                <ul style='margin: 8px 0; padding-left: 20px; font-size: 0.9em;'>
+                                    <li>Click messages to jump to time</li>
+                                    <li>Use Trisha's Lab to clean audio</li>
+                                    <li>Export in multiple formats</li>
+                                    <li>Adjust speaker count for accuracy</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </details>
             </div>
             """)
             
@@ -490,7 +1083,7 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
                                 elem_id="conversation-output",
                                 value="Upload an audio file and click 'Generate Chat' to start. A summary will appear here."
                             )
-                        
+
                         with gr.TabItem("Raw Text"):
                             output_raw = gr.Textbox(
                                 label="Raw Transcription",
@@ -498,11 +1091,41 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
                                 elem_id="transcription-output",
                                 lines=15
                             )
-                        
+
                         with gr.TabItem("JSON Data"):
                             output_json = gr.JSON(
                                 label="Detailed Results"
                             )
+
+                        with gr.TabItem("💾 Export"):
+                            gr.HTML("""
+                            <div class='export-buttons'>
+                                <h3 style='color: #00ff9d; margin-top: 0;'>📤 Export Transcript</h3>
+                                <p style='color: #999; margin-bottom: 15px;'>Download your transcription in multiple formats</p>
+                                <div style='display: flex; flex-wrap: wrap; gap: 10px;'>
+                                    <button onclick='exportJSON()' class='export-btn' title='Export as JSON (Ctrl+J)'>
+                                        📄 JSON
+                                    </button>
+                                    <button onclick='exportCSV()' class='export-btn' title='Export as CSV (Ctrl+Shift+C)'>
+                                        📊 CSV
+                                    </button>
+                                    <button onclick='exportSRT()' class='export-btn' title='Export as SRT Subtitles (Ctrl+Shift+S)'>
+                                        🎬 SRT
+                                    </button>
+                                    <button onclick='exportTXT()' class='export-btn' title='Export as Plain Text (Ctrl+Shift+T)'>
+                                        📝 TXT
+                                    </button>
+                                </div>
+                                <div style='margin-top: 15px; padding: 12px; background: rgba(0, 204, 255, 0.1); border-radius: 6px; border-left: 3px solid #00ccff;'>
+                                    <p style='color: #00ccff; font-size: 0.9em; margin: 0;'>
+                                        <strong>💡 Tip:</strong> Use keyboard shortcuts for faster export!
+                                    </p>
+                                    <p style='color: #999; font-size: 0.85em; margin: 5px 0 0 0;'>
+                                        Space = Play/Pause • ← → = Seek • Click message to jump
+                                    </p>
+                                </div>
+                            </div>
+                            """)
             
             with gr.Row():
                 status = gr.Markdown(
@@ -758,7 +1381,7 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
         try:
             # Check if audio is provided
             if audio is None:
-                return "<div class='chat-container'>Please upload an audio file.</div>", None, "", "*Please upload an audio file.*"
+                return "<div class='chat-container'>Please upload an audio file.</div>", None, "", "", {}, "*Please upload an audio file.*"
                 
             # Set audio path
             audio_path = audio
@@ -778,7 +1401,7 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
             print(f"Result keys: {result.keys()}")
             
             if isinstance(result, dict) and "error" in result:
-                return f"<div class='chat-container'>Error: {result['error']}</div>", None, "", f"*Error: {result['error']}*"
+                return f"<div class='chat-container'>Error: {result['error']}</div>", None, "", "", {}, f"*Error: {result['error']}*"
                 
             if "segments" in result:
                 segments = result["segments"]
@@ -870,42 +1493,55 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
                         summary_markdown = f"*Error processing summary: {e}*"
                 
                 chat_html += "</div>"
-                
-                # Add a small script to initialize the audio sync on load
-                chat_html += """
+
+                # Add script to initialize audio sync and store transcript data for export
+                import json
+                result_json_safe = json.dumps(result).replace("'", "\\'").replace("\n", "\\n")
+
+                chat_html += f"""
                 <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    console.log('Chat container loaded - initializing audio sync');
-                    if (window.setupAudioSync) {
-                        window.setupAudioSync();
-                    } else {
-                        console.log('setupAudioSync not available yet');
-                    }
-                });
-                
-                // Also try immediately if DOM is already loaded
-                if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                    setTimeout(function() {
-                        console.log('Trying immediate setup');
-                        if (window.setupAudioSync) {
-                            window.setupAudioSync();
-                        }
-                    }, 500);
-                }
+                // Store transcript data for export functionality
+                if (typeof storeTranscriptData === 'function') {{
+                    storeTranscriptData({result_json_safe});
+                }} else {{
+                    // Retry storing data after a short delay if function not available yet
+                    setTimeout(function() {{
+                        if (typeof storeTranscriptData === 'function') {{
+                            storeTranscriptData({result_json_safe});
+                        }}
+                    }}, 1000);
+                }}
+
+                // Initialize audio player
+                setTimeout(function() {{
+                    if (typeof initializeAudioPlayer === 'function') {{
+                        initializeAudioPlayer();
+                    }}
+                }}, 500);
+
+                // Add click handlers to chat messages
+                document.querySelectorAll('.chat-message').forEach(function(msg) {{
+                    msg.style.cursor = 'pointer';
+                    msg.addEventListener('click', function() {{
+                        const startTime = parseFloat(this.dataset.start);
+                        if (!isNaN(startTime) && typeof jumpToTime === 'function') {{
+                            jumpToTime(startTime);
+                        }}
+                    }});
+                }});
                 </script>
-                </div>
                 """
-                
-                # Return chat HTML, audio for playback, summary, and status
-                return chat_html, audio_path, summary_markdown, f"*Processing completed successfully! Identified {num_speakers} speakers.*"
+
+                # Return chat HTML, audio for playback, summary, raw text, JSON data, and status
+                return chat_html, audio_path, summary_markdown, result.get("text", ""), result, f"*✅ Processing completed successfully! Identified {num_speakers} speakers. Ready to export.*"
             else:
-                return "<div class='chat-container'>No conversation segments found</div>", None, "", "*Processing completed, but no conversation segments were found.*"
+                return "<div class='chat-container'>No conversation segments found</div>", None, "", "", {}, "*Processing completed, but no conversation segments were found.*"
                 
         except Exception as e:
             print(f"Error in process_chat: {e}")
             import traceback
             traceback.print_exc()
-            return "<div class='chat-container'>Error processing audio</div>", None, "", f"*Error: {str(e)}*"
+            return "<div class='chat-container'>Error processing audio</div>", None, "", "", {}, f"*Error: {str(e)}*"
     # Connect the chat process button directly - using global pipeline
     btn_process.click(
         fn=lambda a, t, s, e, n, th: process_chat(a, t, s, e, n, th),
@@ -918,11 +1554,14 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
             threshold
         ],
         outputs=[
-            chat_container,   # Chat bubbles container
-            audio_playback,   # Audio playback
+            chat_container,      # Chat bubbles container
+            audio_playback,      # Audio playback
             output_conversation, # Summary tab
-            status            # Status message
-        ]
+            output_raw,          # Raw text tab
+            output_json,         # JSON data tab
+            status               # Status message
+        ],
+        show_progress="full"
     )
     
     # === Trisha's Audio Lab Processing Function === 🧪
@@ -1145,9 +1784,57 @@ with gr.Blocks(theme=cyberpunk_theme, css="""
         outputs=[waveform_plot, spectrogram_plot, pitch_plot, chroma_plot, analysis_status, audio_info],
         show_progress=True
     )
-    
-    # Footer
-    gr.Markdown(CREDITS, elem_classes="footer")
+
+    # Enhanced Footer with system info and credits
+    with gr.Row():
+        gr.HTML(f"""
+        <div class='footer'>
+            <div style='max-width: 1200px; margin: 0 auto;'>
+                <h3 style='color: #00ff9d; margin-bottom: 15px;'>🎧 CyberVox Audio Workspace</h3>
+
+                <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px;'>
+                    <div style='text-align: left;'>
+                        <h4 style='color: #00ccff; margin-bottom: 10px;'>🚀 Powered By</h4>
+                        <ul style='list-style: none; padding: 0; font-size: 0.9em; line-height: 1.8;'>
+                            <li>⚡ <a href='https://github.com/openai/whisper' target='_blank' style='color: #00ff9d; text-decoration: none;'>Whisper V3 Turbo</a></li>
+                            <li>🎤 <a href='https://github.com/pyannote/pyannote-audio' target='_blank' style='color: #00ff9d; text-decoration: none;'>PyAnnote Audio</a></li>
+                            <li>🔊 <a href='https://github.com/k2-fsa/sherpa-onnx' target='_blank' style='color: #00ff9d; text-decoration: none;'>Sherpa ONNX</a></li>
+                            <li>🤖 <a href='https://claude.ai' target='_blank' style='color: #00ff9d; text-decoration: none;'>Claude AI</a></li>
+                        </ul>
+                    </div>
+
+                    <div style='text-align: left;'>
+                        <h4 style='color: #00ccff; margin-bottom: 10px;'>💡 Features</h4>
+                        <ul style='list-style: none; padding: 0; font-size: 0.9em; line-height: 1.8;'>
+                            <li>✅ Real-time audio synchronization</li>
+                            <li>✅ Multi-format export (JSON/CSV/SRT/TXT)</li>
+                            <li>✅ AI-powered speaker identification</li>
+                            <li>✅ Interactive chat bubbles</li>
+                        </ul>
+                    </div>
+
+                    <div style='text-align: left;'>
+                        <h4 style='color: #00ccff; margin-bottom: 10px;'>🛠️ System Info</h4>
+                        <ul style='list-style: none; padding: 0; font-size: 0.9em; line-height: 1.8;'>
+                            <li>🖥️ GPU: {'CUDA Available' if torch.cuda.is_available() else 'CPU Only'}</li>
+                            <li>🔢 Torch: {torch.__version__}</li>
+                            <li>🎨 Gradio: {gr.__version__}</li>
+                            <li>📦 Python: {sys.version.split()[0]}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style='border-top: 1px solid #333; padding-top: 15px; margin-top: 15px;'>
+                    <p style='color: #999; font-size: 0.9em; margin: 5px 0;'>
+                        Built with ❤️ by <a href='https://8b.is/?ref=Turbo-Whisper-Workspace' target='_blank' style='color: #00ff9d; text-decoration: none; font-weight: 600;'>8b.is Team</a>
+                    </p>
+                    <p style='color: #666; font-size: 0.85em; margin: 5px 0;'>
+                        © 2024 CyberVox • All rights reserved • <a href='https://github.com' target='_blank' style='color: #00ccff; text-decoration: none;'>GitHub</a> • <a href='#' style='color: #00ccff; text-decoration: none;'>Documentation</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        """)
 
 # Only launch the app when running as main script
 if __name__ == "__main__":
